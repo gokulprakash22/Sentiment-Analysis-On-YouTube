@@ -13,6 +13,20 @@ from googletrans import Translator
 from textblob import TextBlob
 
 
+def get_video_id(url):
+    query = urlparse.urlparse(url)
+    if query.hostname == 'youtu.be':
+        return query.path[1:]
+    if query.hostname in ('www.youtube.com', 'youtube.com'):
+        if query.path == '/watch':
+            p = urlparse.parse_qs(query.query)
+            return p['v'][0]
+        if query.path[:7] == '/embed/':
+            return query.path.split('/')[2]
+        if query.path[:3] == '/v/':
+            return query.path.split('/')[2]
+    return None
+
 def get_video_details(videoId):
     global video_details
     video_details={}
@@ -203,9 +217,9 @@ def index(request):
 
 def report(request):
     url = request.POST["destination"]
-    parsed_url = urlparse(str(url))
-    query = parse_qs(parsed_url.query)
-    videoId = query["v"][0]
+    videoId=get_video_id(url)
+    if(videoId==None):
+        return render(request,'index.html')
     get_video_details(videoId)
     get_video_comments(videoId)
     make_video_report()
