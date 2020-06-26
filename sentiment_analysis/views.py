@@ -1,289 +1,228 @@
-from django.shortcuts import render
 # Importing packages
-import urllib.request
-import urllib.parse
-import urllib.error
-from bs4 import BeautifulSoup
-import ssl
-import json
-import ast
-import json
-import csv
-import os
-import pickle
-import re
-import matplotlib.pyplot as plt
-import google.oauth2.credentials
-import googletrans
-from urllib.request import Request, urlopen
-from googletrans import Translator
-from textblob import TextBlob
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from google_auth_oauthlib.flow import InstalledAppFlow
+from django.shortcuts import render
 from django.http import HttpResponse
+from django.http import FileResponse
+import os
+# For parsing URL
+from urllib.parse import urlparse, urlencode, parse_qs
+# For extracting comments from YouTube
+import googleapiclient.discovery
+# For translating comments into English
+from googletrans import Translator
+# For sentiment analysing the translated comment
+from textblob import TextBlob
 
 
+def get_video_details(videoId):
+    global video_details
+    video_details={}
+    api_service_name = "youtube"
+    api_version = "v3"
+    DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
+    youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
+    request = youtube.videos().list(
+        part="snippet,contentDetails,statistics",
+        id=videoId
+    )
+    response = request.execute()
+    video_details["TITLE"] = response["items"][0]["snippet"]["title"]
+    video_details["PUBLISHED_AT"] = response["items"][0]["snippet"]["publishedAt"]
+    video_details["CHANNEL_NAME"] = response["items"][0]["snippet"]["channelTitle"]
+    video_details["VIEWS_COUNT"] = response["items"][0]["statistics"]["viewCount"]
+    video_details["LIKES_COUNT"] = response["items"][0]["statistics"]["likeCount"]
+    video_details["DISLIKES_COUNT"] = response["items"][0]["statistics"]["dislikeCount"]
+    video_details["COMMENTS_COUNT"] = response["items"][0]["statistics"]["commentCount"]
+    video_details["POLARITY"] = 0
 
-
-# The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
-# the OAuth 2.0 information for this application, including its client_id and client_secret.
-THIS_FOLDER=os.path.dirname(os.path.abspath(__file__))
-CLIENT_SECRETS_FILE = os.path.join(THIS_FOLDER,'client_secret.json')
-TOKEN_PICKLE=os.path.join(THIS_FOLDER,'token.pickle')
-
-# This OAuth 2.0 access scope allows for full read/write access to the
-# authenticated user's account and requires requests to use an SSL connection.
-SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
-API_SERVICE_NAME = 'youtube'
-API_VERSION = 'v3'
-
-def get_authenticated_service():
-    credentials = None
-    if os.path.exists(TOKEN_PICKLE):
-        with open(TOKEN_PICKLE, 'rb') as token:
-            credentials = pickle.load(token)
-    #  Check if the credentials are invalid or do not exist
-    if not credentials or not credentials.valid:
-        # Check if the credentials have expired
-        if credentials and credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
+def sentiment_analysis(mat):
+    translator = Translator()
+    overall_polarity = video_details["POLARITY"]
+    for item in mat["items"]:       
+        comments = {}
+        comment = item["snippet"]["topLevelComment"]
+        comments["author"] = comment["snippet"]["authorDisplayName"]
+        comments["comment"] = comment["snippet"]["textDisplay"]
+        comments["likecount"] = comment["snippet"]["likeCount"]
+        comments["publishedAt"] = comment["snippet"]["publishedAt"]
+        try:
+            inp = translator.translate(comment["snippet"]["textDisplay"]).text
+        except:
+            inp = comment["snippet"]["textDisplay"]
+        analyzer = TextBlob(inp)
+        polarity = analyzer.sentiment.polarity
+        comments["polarity"] = polarity
+        overall_polarity += polarity
+        if polarity > 0:
+            positive_comments.append(comments)
+        elif polarity < 0:
+            negative_comments.append(comments)
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                CLIENT_SECRETS_FILE, SCOPES)
-            credentials = flow.run_console()
+            neutral_comments.append(comments)
+    overall_polarity = float(format(overall_polarity, '.2f'))
+    video_details['POLARITY']=overall_polarity
 
-        # Save the credentials for the next run
-        with open(TOKEN_PICKLE, 'wb') as token:
-            pickle.dump(credentials, token)
+def get_video_comments(videoId):
+    global positive_comments
+    global negative_comments
+    global neutral_comments
+    positive_comments = []
+    negative_comments = []
+    neutral_comments = []
+    api_service_name = "youtube"
+    api_version = "v3"
+    DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
+    youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
+    request = youtube.commentThreads().list(
+        part="snippet,replies",
+        videoId=videoId,
+        textFormat="plainText"
+    )
+    response = request.execute()
+    nextPageToken = response.get("nextPageToken")
+    sentiment_analysis(response)
+    global comments_count
+    comments_count=20
+    while nextPageToken:
+        request = youtube.commentThreads().list(
+            part="snippet,replies",
+            videoId=videoId,
+            textFormat="plainText",
+            pageToken=nextPageToken
+        )
+        response = request.execute()
+        nextPageToken = response.get("nextPageToken")
+        sentiment_analysis(response)
+        comments_count+=20
+        print(comments_count)
+        if(comments_count>=1000):
+            break
 
-    return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
+def make_video_report():
+    global summary
+    global positive_str
+    global negative_str
+    global neutral_str
+    summary=""
+    positive_str=""
+    negative_str=""
+    neutral_str=""
+    summary+="VIDEO TITLE : "+video_details['TITLE']
+    summary+="\nVIDEO PUBLISHED AT : "+video_details['PUBLISHED_AT']
+    summary+="\nCHANNEL NAME : "+video_details['CHANNEL_NAME']
+    summary+="\nVIEWS COUNT : "+video_details['VIEWS_COUNT']
+    summary+="\nLIKES COUNT : "+video_details['LIKES_COUNT']
+    summary+="\nDISLIKES COUNT : "+video_details['DISLIKES_COUNT']
+    summary+="\nCOMMENTS COUNT : "+video_details['COMMENTS_COUNT']
+    positive_comments_count = len(positive_comments)
+    negative_comments_count = len(negative_comments)
+    neutral_comments_count = len(neutral_comments)
+    positive_percent = float(format(100 * float(positive_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
+    negative_percent = float(format(100 * float(negative_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
+    neutral_percent = float(format(100 * float(neutral_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
+    video_details['POSITIVE_COUNT'] = positive_comments_count
+    video_details['NEGATIVE_COUNT'] = negative_comments_count
+    video_details['NEUTRAL_COUNT'] = neutral_comments_count
+    video_details['POSITIVE_PERCENT'] = positive_percent
+    video_details['NEGATIVE_PERCENT'] = negative_percent
+    video_details['NEUTRAL_PERCENT'] = neutral_percent
+    summary+= "\nPOSITIVE COMMENTS COUNT: "+str(positive_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(positive_percent)+"%)"
+    summary+= "\nNEGATIVE COMMENTS COUNT: "+str(negative_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(negative_percent)+"%)"
+    summary+= "\nNEUTRAL COMMENTS COUNT: "+str(neutral_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(neutral_percent)+"%)"
+    if (video_details['POLARITY'] > 0):
+        summary+= "\nOVERALL : Positive comments with Overall Polarity "+str(video_details['POLARITY'])
+    elif (video_details['POLARITY'] < 0):
+        summary+= "\nOVERALL : Negative reviews with Overall Polarity " + str(video_details['POLARITY'])
+    elif (video_details['POLARITY'] == 0):
+        summary+= "\nOVERALL : Neutral reviews with Overall Polarity " + str(video_details['POLARITY'])
+    for index,comment in enumerate(positive_comments):
+        positive_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+    for index,comment in enumerate(negative_comments):
+        negative_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+    for index,comment in enumerate(neutral_comments):
+        neutral_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
 
-
-def write_to_csv(comments):
-    pass
-
+def write_to_csv():
+    import csv
+    with open('comments.csv', 'w') as comments_file:
+        comments_writer = csv.writer(comments_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        comments_writer.writerow(['S.No', 'Category', 'Author', 'Comment', 'Likes Count', 'Published At', 'Polarity'])
+        for index,comment in enumerate(positive_comments):
+            try:
+                comments_writer.writerow([index+1,"Positive Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
+            except:
+                comments_writer.writerow([index+1,"Positive Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+        for index,comment in enumerate(negative_comments):
+            try:
+                comments_writer.writerow([index+1,"Negative Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
+            except:
+                comments_writer.writerow([index+1,"Negative Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+        for index,comment in enumerate(neutral_comments):
+            try:
+                comments_writer.writerow([index+1,"Neutral Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
+            except:
+                comments_writer.writerow([index+1,"Neutral Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
 
 def draw_piechart():
-    positive = video_details['POSITIVE']
-    negative = video_details['NEGATIVE']
-    neutral = video_details['NEUTRAL']
-    positive_num = video_details['POSITIVE_NUM']
-    negative_num = video_details['NEGATIVE_NUM']
-    neutral_num = video_details['NEUTRAL_NUM']
-    labels = ['Positive [' + str(positive) + '%]\nCount : ' + str(positive_num),
-              'Negative [' + str(negative) + '%]\nCount : ' + str(negative_num),
-              'Neutral [' + str(neutral) + '%]\nCount : ' + str(neutral_num)]
-    sizes = [positive, negative, neutral]
-    name = [str(positive) + '%', str(negative) + '%', str(neutral) + '%']
-    colors = ['blue', 'red', 'yellow']
+    import matplotlib
+    matplotlib.use('Agg')
+    from matplotlib import pyplot as plt
+    positive_comments_count = video_details['POSITIVE_COUNT']
+    negative_comments_count = video_details['NEGATIVE_COUNT']
+    neutral_comments_count = video_details['NEUTRAL_COUNT']
+    positive_percent = video_details['POSITIVE_PERCENT']
+    negative_percent = video_details['NEGATIVE_PERCENT']
+    neutral_percent = video_details['NEUTRAL_PERCENT']
+    labels=['Positive : ' + str(positive_percent) + '%\nCount : ' + str(positive_comments_count)+("+" if comments_count>=1000 else ""),
+            'Negative : ' + str(negative_percent) + '%\nCount : ' + str(negative_comments_count)+("+" if comments_count>=1000 else ""),
+            'Neutral : ' + str(neutral_percent) + '%\nCount : ' + str(neutral_comments_count)+("+" if comments_count>=1000 else "")]
+    sizes = [positive_percent, negative_percent, neutral_percent]
+    name = [str(positive_percent) + '%', str(negative_percent) + '%', str(neutral_percent) + '%']
+    colors = ['green', 'red', 'yellow']
     patches, texts = plt.pie(sizes, colors=colors, startangle=90, labels=name)
     plt.legend(patches, labels, loc="best")
-    plt.title("Youtube comments analysis Pie Chart")
+    plt.title("Youtube Comments Analysis Pie Chart")
     plt.axis('equal')
     plt.tight_layout()
     plt.show()
+    plt.close()
 
 
-def make_report():
-    global resstr2
-    resstr2=''
-    resstr2+="TITLE : "+video_details['TITLE']
-    resstr2+="\nCHANNEL NAME : "+video_details['CHANNEL_NAME']
-    resstr2+="\nNUMBER OF VIEWS : "+video_details['NUMBER_OF_VIEWS']
-    resstr2+="\nLIKES : "+video_details['LIKES']
-    resstr2+="\nDISLIKES : "+video_details['DISLIKES']
-    resstr2+="\nNUMBER OF SUBSCRIPTIONS : "+video_details['NUMBER_OF_SUBSCRIPTIONS']
-    resstr2 += "\nNUMBER OF POSITIVE COMMENTS : " + str(video_details['POSITIVE_NUM'])
-    resstr2 += "\nNUMBER OF NEGATIVE COMMENTS : " + str(video_details['NEGATIVE_NUM'])
-    resstr2 += "\nNUMBER OF NEUTRAL COMMENTS : " + str(video_details['NEUTRAL_NUM'])
-
-    positive_num = video_details['POSITIVE_NUM']
-    negative_num = video_details['NEGATIVE_NUM']
-    neutral_num = video_details['NEUTRAL_NUM']
-    positive_percent = 100 * float(positive_num) / float(positive_num + negative_num + neutral_num)
-    negative_percent = 100 * float(negative_num) / float(positive_num + negative_num + neutral_num)
-    neutral_percent = 100 * float(neutral_num) / float(positive_num + negative_num + neutral_num)
-    positive = float(format(positive_percent, '.2f'))
-    negative = float(format(negative_percent, '.2f'))
-    neutral = float(format(neutral_percent, '.2f'))
-
-    video_details['POSITIVE'] = positive
-    video_details['NEGATIVE'] = negative
-    video_details['NEUTRAL'] = neutral
-    resstr2 += "\nPOSITIVE : NEGATIVE : NEUTRAL :: " + str(positive) + " : " + str(negative) + " : " + str(neutral)
-
-    if (video_details['POLARITY'] > 0):
-        resstr2+= "\nOVERALL : Positive comments with Polarity "+str(video_details['POLARITY'])
-        print("OVERALL : Positive reviews with Polarity",video_details['POLARITY'])
-    elif (video_details['POLARITY'] < 0):
-        resstr2+= "\nOVERALL : Negative reviews with Polarity " + str(video_details['POLARITY'])
-        print("OVERALL : Negative comments with Polarity",video_details['POLARITY'])
-    elif (video_details['POLARITY'] == 0):
-        resstr2+= "\nOVERALL : Neutral reviews with Polarity " + str(video_details['POLARITY'])
-        print("OVERALL : Neutral comments with Polarity",video_details['POLARITY'])
-
-
-
-def get_details(url):
-    # Making the website believe that you are accessing it using a mozilla browser
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    webpage = urlopen(req).read()
-
-    # Creating a BeautifulSoup object of the html page for easy extraction of data.
-    soup = BeautifulSoup(webpage, 'html.parser')
-    html = soup.prettify('utf-8')
-
-    for span in soup.findAll('span', attrs={'class': 'watch-title'}):
-        video_details['TITLE'] = span.text.strip()
-
-    for script in soup.findAll('script', attrs={'type': 'application/ld+json'}):
-        channelDesctiption = json.loads(script.text.strip())
-        video_details['CHANNEL_NAME'] = channelDesctiption['itemListElement'][0]['item']['name']
-
-    for div in soup.findAll('div', attrs={'class': 'watch-view-count'}):
-        video_details['NUMBER_OF_VIEWS'] = div.text.strip()
-
-    for button in soup.findAll('button', attrs={'title': 'I like this'}):
-        video_details['LIKES'] = button.text.strip()
-
-    for button in soup.findAll('button', attrs={'title': 'I dislike this'}):
-        video_details['DISLIKES'] = button.text.strip()
-
-    for span in soup.findAll('span', attrs={'class': 'yt-subscription-button-subscriber-count-branded-horizontal yt-subscriber-count'}):
-        video_details['NUMBER_OF_SUBSCRIPTIONS'] = span.text.strip()
-
-
-
-def get_video_comments(request,service, **kwargs):
-    comments = []
-    results = service.commentThreads().list(**kwargs).execute()
-    num=1
-    positive_num = 0
-    negative_num = 0
-    neutral_num = 0
-    polarity = 0
-    translator = Translator()
-    flag=0
-    global resstr
-    resstr=''
-    while results:
-        for item in results['items']:
-            comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
-            comments.append(comment)
-
-            try:
-                inp = translator.translate(comment).text
-            except:
-                inp=comment
-            analyzer = TextBlob(inp)
-            polarity += analyzer.sentiment.polarity
-            if analyzer.sentiment.polarity > 0:
-                positive_num += 1
-                resstr+=str(num)+' : Positive comment : '+comment+'\n'
-                print(num, ": Positive comment :", comment)
-                num += 1
-
-
-            elif analyzer.sentiment.polarity < 0:
-                negative_num += 1
-                resstr += str(num) + ' : Positive comment : ' + comment + '\n'
-                print(num, ": Negative comment :", comment)
-                num += 1
-
-            elif analyzer.sentiment.polarity == 0:
-                neutral_num += 1
-                resstr += str(num) + ' : Positive comment : ' + comment + '\n'
-                print(num, ": Neutral comment :", comment)
-                num += 1
-
-
-            if(num>100):
-                flag=1
-                break
-        if (flag == 1):
-            break
-        if 'nextPageToken' in results:
-            kwargs['pageToken'] = results['nextPageToken']
-            results = service.commentThreads().list(**kwargs).execute()
-        else:
-            break
-
-    polarity = float(format(polarity, '.2f'))
-    video_details['POLARITY']=polarity
-    video_details['POSITIVE_NUM'] = positive_num
-    video_details['NEGATIVE_NUM'] = negative_num
-    video_details['NEUTRAL_NUM'] = neutral_num
-
-    return comments
-
-
-def get_videos(service, **kwargs):
-    final_results = []
-    results = service.search().list(**kwargs).execute()
-
-    i = 0
-    max_pages = 3
-    num=1
-    while results and i < max_pages:
-        final_results.extend(results['items'])
-        for item in final_results:
-            title = item['snippet']['title']
-            print(num,":",title)
-            num+=1
-        # Check if another page exists
-        if 'nextPageToken' in results:
-            kwargs['pageToken'] = results['nextPageToken']
-            results = service.search().list(**kwargs).execute()
-            i += 1
-        else:
-            break
-    return final_results
-
-
-def search_videos_by_keyword(service, **kwargs):
-    results = get_videos(service, **kwargs)
-    item=int(input("Enter video number :"))
-    video_id = results[item-1]['id']['videoId']
-
-
-def search_videos_by_url(request,x, service, **kwargs):
-    video_id = x
-    url='https://www.youtube.com/watch?v='+video_id
-    get_details(url)
-    final_result = []
-    comments = get_video_comments(request,service, part='snippet', videoId=video_id, textFormat='plainText')
-    final_result.extend([(video_id, comment) for comment in comments])
-
-
-# Create your views here.
+# Views
 video_details={}
-resstr=''
-resstr2=''
+positive_comments = []
+negative_comments = []
+neutral_comments = []
+summary=""
+positive_str=""
+negative_str=""
+neutral_str=""
+comments_count=0
+
 def index(request):
     return render(request,'index.html')
 
-def search(request):
-    keyword = request.POST.get("destination","guest")
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+def report(request):
+    url = request.POST["destination"]
+    parsed_url = urlparse(str(url))
+    query = parse_qs(parsed_url.query)
+    videoId = query["v"][0]
+    get_video_details(videoId)
+    get_video_comments(videoId)
+    make_video_report()
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str})
+
+def csv(request):
+    if(os.path.exists("comments.csv")):
+        os.remove("comments.csv")
+    write_to_csv()
+    csv_file = open('comments.csv', 'rb')
+    response = FileResponse(csv_file)
+    return response
+
+def pie_chart(request):
+    error_str=""
     try:
-        service = get_authenticated_service()
+        draw_piechart()
     except:
-        os.remove(TOKEN_PICKLE)
-        service = get_authenticated_service()
-    if (re.search("v=", keyword) != None):
-        x = re.split("v=", keyword)
-        x = x[1]
-        search_videos_by_url(request, x, service, q=keyword, part='id,snippet', eventType='completed', type='video')
-        make_report()
-        return render(request, 'results.html', {'comments': resstr, 'report': resstr2})
-    else:
-        # search_videos_by_url(service, q=keyword, part='id,snippet', eventType='completed', type='video')
-        return render(request, 'videos.html', {'name': 'Sriram'})
-
-
-
-
-def pie(request):
-    draw_piechart()
-    return render(request, 'results.html', {'comments': resstr, 'report': resstr2})
+        error_str="Some Problem occured. Please Try again later"
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str, 'error_str':error_str})

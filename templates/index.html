@@ -21,14 +21,13 @@
         
         <div class="header">
             <h1>SENTIMENT ANALYSIS ON YOUTUBE</h1>
-            <img src="{% static 'images/dots.png' %}" alt="">
         </div>
         <div class="container">
-            <form id="booking-form" class="booking-form" method="POST" action="search">
+            <form id="booking-form" class="booking-form" method="POST" action="report">
                 {% csrf_token %}
                 <div class="form-group">
                     <div class="form-destination">
-                        <label for="destination">Search by keywords or URL</label>
+                        <label for="destination">Enter YouTube Video URL</label>
                         <input type="text" id="destination" name="destination" placeholder="EG. https://www.youtube.com/watch?v=gjnrtCKZqYg" />
                     </div>
                     
@@ -45,5 +44,6 @@
     <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'vendor/jquery-ui/jquery-ui.min.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
+
 </body>
 </html>

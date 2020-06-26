@@ -156,10 +156,10 @@ iframe {
   padding: 15px;
 
   background: rgba(219,21,99,0.8);
-  background: -webkit-linear-gradient(45deg, rgba(195, 55, 100,0.8), rgba(29,38,113,0.8));
-  background: -o-linear-gradient(45deg, rgba(195, 55, 100,0.8), rgba(29,38,113,0.8));
-  background: -moz-linear-gradient(45deg, rgba(195, 55, 100,0.8), rgba(29,38,113,0.8));
-  background: linear-gradient(45deg, rgba(195, 55, 100,0.8), rgba(29,38,113,0.8));
+background: -webkit-linear-gradient(45deg, rgba(170, 7, 107,0.8), rgba(97, 4, 95,0.8));
+  background: -o-linear-gradient(45deg, rgba(170, 7, 107,0.8), rgba(97, 4, 95,0.8));
+  background: -moz-linear-gradient(45deg, rgba(170, 7, 107,0.8), rgba(97, 4, 95,0.8));
+  background: linear-gradient(45deg, rgba(170, 7, 107,0.8), rgba(97, 4, 95,0.8));
 }
 
 .wrap-contact2 {

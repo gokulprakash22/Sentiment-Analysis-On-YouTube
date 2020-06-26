@@ -31,38 +31,49 @@
 					<span class="contact2-form-title">
 						SENTIMENT ANALYSIS ON YOUTUBE
 					</span>
+					<span style="color:red;text-align:center">
+						{{error_str}}
+					</span>
 
-					
 					<h4>SUMMARY</h4><br>
-					<div class="wrap-input2 validate-input" data-validate = "Message is required">
-						<textarea class="input2" name="message">{{report}}</textarea>
+					<div class="wrap-input2">
+						<textarea class="input2" name="message" rows="10">{{summary}}</textarea>
 						<span class="focus-input2" data-placeholder=""></span>
 					</div>
-				    <h4>COMMENTS</h4><br>
-					<div class="wrap-input2 validate-input" data-validate = "Message is required">
-						<textarea class="input2" name="message">{{comments}}</textarea>
+				    <h4>POSITIVE COMMENTS</h4><br>
+					<div class="wrap-input2">
+						<textarea class="input2" name="message" rows="10">{{positive_str}}</textarea>
 						<span class="focus-input2" data-placeholder=""></span>
 					</div>
-
+				    <h4>NEGATIVE COMMENTS</h4><br>
+					<div class="wrap-input2 validate-input" data-validate = "Message is required">
+						<textarea class="input2" name="message" rows="10">{{negative_str}}</textarea>
+						<span class="focus-input2" data-placeholder=""></span>
+					</div>
+				    <h4>NEUTRAL COMMENTS</h4><br>
+					<div class="wrap-input2 validate-input" data-validate = "Message is required">
+						<textarea class="input2" name="message" rows="10">{{neutral_str}}</textarea>
+						<span class="focus-input2" data-placeholder=""></span>
+					</div>
 
 
 					<div class="container-contact2-form-btn">
 						<div class="wrap-contact2-form-btn">
 							<div class="contact2-form-bgbtn"></div>
-							<button class="contact2-form-btn">
-								Download
-							</button>
+							<a href="csv"><button class="contact2-form-btn">
+								Download as CSV
+							</button></a>
 							
 						</div>
 						<div class="wrap-contact2-form-btn">
 							<div class="contact2-form-bgbtn"></div>
-							<a href="pie"><button class="contact2-form-btn">
+						    <a href="pie_chart"><button class="contact2-form-btn">
 								Show Pie Chart
 							</button></a>
 							
 						</div>
 					</div>
-
+				<center><a href="home"><i class="fa fa-home fa-3x" aria-hidden="true"></i></a></center>
 			</div>
 		</div>
 	</div>
@@ -80,7 +91,6 @@
 <!--===============================================================================================-->
 	<script src="{% static 'js/main.js' %}"></script>
 
-	
 
 </body>
 </html>
