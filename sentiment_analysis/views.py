@@ -161,6 +161,8 @@ def write_to_csv():
                 comments_writer.writerow([index+1,"Neutral Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
             except:
                 comments_writer.writerow([index+1,"Neutral Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+    with open('comments.csv', 'r') as comments_file:
+        pass
 
 def draw_piechart():
     import matplotlib
