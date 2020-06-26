@@ -194,6 +194,7 @@ body {
   color: #fff;
   background-image: url("../images/form-img.jpg");
   height: 100vh;
+  width: 100%;
   background-repeat: no-repeat;
   background-size: cover;
   -moz-background-size: cover;
@@ -231,7 +232,9 @@ body {
 
 
 .booking-form {
-  padding: 35px 70px 51px 70px; }
+  padding: 35px 70px 51px 70px;
+  margin-bottom: 35px;
+}
 
 .header {
   align-items: center;
