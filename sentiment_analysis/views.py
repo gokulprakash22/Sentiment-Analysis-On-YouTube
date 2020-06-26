@@ -161,8 +161,6 @@ def write_to_csv():
                 comments_writer.writerow([index+1,"Neutral Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
             except:
                 comments_writer.writerow([index+1,"Neutral Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
-    with open('comments.csv', 'r') as comments_file:
-        pass
 
 def draw_piechart():
     import matplotlib
@@ -211,10 +209,10 @@ def report(request):
     get_video_details(videoId)
     get_video_comments(videoId)
     make_video_report()
+    write_to_csv()
     return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str})
 
 def csv(request):
-    write_to_csv()
     csv_file = open('comments.csv', 'rb')
     response = FileResponse(csv_file)
     return response
