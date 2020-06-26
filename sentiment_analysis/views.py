@@ -212,8 +212,6 @@ def report(request):
     return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str})
 
 def csv(request):
-    if(os.path.exists("comments.csv")):
-        os.remove("comments.csv")
     write_to_csv()
     csv_file = open('comments.csv', 'rb')
     response = FileResponse(csv_file)

@@ -193,7 +193,7 @@ body {
   line-height: 1.8;
   color: #fff;
   background-image: url("../images/form-img.jpg");
-  
+  height: 100vh;
   background-repeat: no-repeat;
   background-size: cover;
   -moz-background-size: cover;
