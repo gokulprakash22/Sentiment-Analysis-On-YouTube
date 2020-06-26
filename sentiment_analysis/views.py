@@ -14,12 +14,12 @@ from textblob import TextBlob
 
 
 def get_video_id(url):
-    query = urlparse.urlparse(url)
+    query = urlparse(url)
     if query.hostname == 'youtu.be':
         return query.path[1:]
     if query.hostname in ('www.youtube.com', 'youtube.com'):
         if query.path == '/watch':
-            p = urlparse.parse_qs(query.query)
+            p = parse_qs(query.query)
             return p['v'][0]
         if query.path[:7] == '/embed/':
             return query.path.split('/')[2]
