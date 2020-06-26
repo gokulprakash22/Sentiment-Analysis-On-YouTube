@@ -94,7 +94,7 @@ def get_video_comments(videoId):
         sentiment_analysis(response)
         comments_count+=20
         print(comments_count)
-        if(comments_count>=1000):
+        if(comments_count>=200):
             break
 
 def make_video_report():
