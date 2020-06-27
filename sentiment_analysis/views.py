@@ -14,16 +14,16 @@ from textblob import TextBlob
 
 
 #global variables
-video_details={}
-positive_comments = []
-negative_comments = []
-neutral_comments = []
-comments_count=0
-nextPageToken=None
-summary=""
-positive_str=""
-negative_str=""
-neutral_str=""
+global video_details
+global positive_comments
+global negative_comments
+global neutral_comments
+global comments_count
+global nextPageToken
+global summary
+global positive_str
+global negative_str
+global neutral_str
 api_service_name = "youtube"
 api_version = "v3"
 DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
