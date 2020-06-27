@@ -47,6 +47,7 @@ def get_video_details(videoId):
     video_details["VIDEO_ID"] = videoId
 
 def sentiment_analysis(mat):
+    global video_details
     translator = Translator()
     overall_polarity = video_details["POLARITY"]
     for item in mat["items"]:       
@@ -78,6 +79,7 @@ def get_video_comments():
     global negative_comments
     global neutral_comments
     global nextPageToken
+    global video_details
     positive_comments = []
     negative_comments = []
     neutral_comments = []
@@ -113,6 +115,7 @@ def get_more_comments():
     global neutral_comments
     global nextPageToken
     global comments_count
+    global video_details
     while nextPageToken:
         request = youtube.commentThreads().list(
             part="snippet,replies",
@@ -134,6 +137,7 @@ def make_video_report():
     global negative_str
     global neutral_str
     global nextPageToken
+    global video_details
     summary=""
     positive_str=""
     negative_str=""
@@ -157,11 +161,11 @@ def make_video_report():
     summary+= "\nNEGATIVE COMMENTS COUNT: "+str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_COUNT'])+"%)"
     summary+= "\nNEUTRAL COMMENTS COUNT: "+str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"
     if (video_details['POLARITY'] > 0):
-        summary+= "\nOVERALL : Positive comments with Overall Polarity "+str(video_details['POLARITY'])
+        summary+= "\nOVERALL : Positive Comments With Overall Polarity "+str(video_details['POLARITY'])
     elif (video_details['POLARITY'] < 0):
-        summary+= "\nOVERALL : Negative reviews with Overall Polarity " + str(video_details['POLARITY'])
+        summary+= "\nOVERALL : Negative Comments With Overall Polarity " + str(video_details['POLARITY'])
     elif (video_details['POLARITY'] == 0):
-        summary+= "\nOVERALL : Neutral reviews with Overall Polarity " + str(video_details['POLARITY'])
+        summary+= "\nOVERALL : Neutral Comments With Overall Polarity " + str(video_details['POLARITY'])
     for index,comment in enumerate(positive_comments):
         positive_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
     for index,comment in enumerate(negative_comments):
@@ -172,49 +176,53 @@ def make_video_report():
 def write_to_csv():
     import csv
     global nextPageToken
+    global video_details
     with open('comments.csv', 'w') as comments_file:
         comments_writer = csv.writer(comments_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         comments_writer.writerow(['SUMMARY'])
-        comments_writer.writerow(['VIDEO TITLE', video_details['TITLE']])
-        comments_writer.writerow(['VIDEO PUBLISHED AT', video_details['PUBLISHED_AT']])
-        comments_writer.writerow(['VIDEO ID', video_details['VIDEO_ID']])
-        comments_writer.writerow(['CHANNEL NAME', video_details['CHANNEL_NAME']])
-        comments_writer.writerow(['VIEWS COUNT', video_details['VIEWS_COUNT']])
-        comments_writer.writerow(['LIKES COUNT', video_details['LIKES_COUNT']])
-        comments_writer.writerow(['DISLIKES COUNT', video_details['DISLIKES_COUNT']])
-        comments_writer.writerow(['COMMENTS COUNT', video_details['COMMENTS_COUNT']])
-        comments_writer.writerow(['POSITIVE COMMENTS COUNT', str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['POSITIVE_PERCENT'])+"%)"])
-        comments_writer.writerow(['NEGATIVE COMMENTS COUNT', str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_PERCENT'])+"%)"])
-        comments_writer.writerow(['NEUTRAL COMMENTS COUNT', str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"])
+        comments_writer.writerow(['S.No','Details','Value'])
+        comments_writer.writerow([1,'Video Title', video_details['TITLE']])
+        comments_writer.writerow([2,'Video Published At', video_details['PUBLISHED_AT']])
+        comments_writer.writerow([3,'Video ID', video_details['VIDEO_ID']])
+        comments_writer.writerow([4,'Channel Name', video_details['CHANNEL_NAME']])
+        comments_writer.writerow([5,'Views Count', video_details['VIEWS_COUNT']])
+        comments_writer.writerow([6,'Likes Count', video_details['LIKES_COUNT']])
+        comments_writer.writerow([7,'Dislikes Count', video_details['DISLIKES_COUNT']])
+        comments_writer.writerow([8,'Comments Count', video_details['COMMENTS_COUNT']])
+        comments_writer.writerow([9,'Positive Comments Count', str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['POSITIVE_PERCENT'])+"%)"])
+        comments_writer.writerow([10,'Negative Comments Count', str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_PERCENT'])+"%)"])
+        comments_writer.writerow([11,'Neutral Comments Count', str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"])
         if (video_details['POLARITY'] > 0):
-            comments_writer.writerow(['OVERALL', 'Positive comments with Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'OVERALL', 'Positive Comments With Overall Polarity '+str(video_details['POLARITY'])])
         elif (video_details['POLARITY'] < 0):
-            comments_writer.writerow(['OVERALL', 'Negative comments with Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'OVERALL', 'Negative Comments With Overall Polarity '+str(video_details['POLARITY'])])
         elif (video_details['POLARITY'] == 0):
-            comments_writer.writerow(['OVERALL', 'Neutral comments with Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'OVERALL', 'Neutral Comments With Overall Polarity '+str(video_details['POLARITY'])])
+        comments_writer.writerow([])
         comments_writer.writerow(['COMMENTS'])
         comments_writer.writerow(['S.No', 'Category', 'Author', 'Comment', 'Likes Count', 'Published At', 'Polarity'])
         for index,comment in enumerate(positive_comments):
             try:
                 comments_writer.writerow([index+1,"Positive Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
             except:
-                comments_writer.writerow([index+1,"Positive Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+                comments_writer.writerow([index+1,"Positive Comment","Can't Decode In CSV","Can't Decode In CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
         for index,comment in enumerate(negative_comments):
             try:
                 comments_writer.writerow([index+1,"Negative Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
             except:
-                comments_writer.writerow([index+1,"Negative Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+                comments_writer.writerow([index+1,"Negative Comment","Can't Decode In CSV","Can't Decode In CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
         for index,comment in enumerate(neutral_comments):
             try:
                 comments_writer.writerow([index+1,"Neutral Comment",comment["author"],comment["comment"],comment["likecount"],comment["publishedAt"],comment["polarity"]])
             except:
-                comments_writer.writerow([index+1,"Neutral Comment","Can't Decode in CSV","Can't Decode in CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
+                comments_writer.writerow([index+1,"Neutral Comment","Can't Decode In CSV","Can't Decode In CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
 
 def draw_piechart():
     import matplotlib
     matplotlib.use('Agg')
     from matplotlib import pyplot as plt
     global nextPageToken
+    global video_details
     labels=['Positive : ' + str(video_details['POSITIVE_PERCENT']) + '%\nCount : ' + str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else ""),
             'Negative : ' + str(video_details['NEGATIVE_PERCENT']) + '%\nCount : ' + str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else ""),
             'Neutral : ' + str(video_details['NEUTRAL_PERCENT']) + '%\nCount : ' + str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")]
@@ -223,7 +231,7 @@ def draw_piechart():
     colors = ['green', 'red', 'yellow']
     patches, texts = plt.pie(sizes, colors=colors, startangle=90, labels=name)
     plt.legend(patches, labels, loc="best")
-    plt.title("Youtube Comments Analysis Pie Chart")
+    plt.title(video_details['TITLE']+" Video Comments Analysis Pie Chart")
     plt.axis('equal')
     plt.savefig('piechart.png')
     plt.close()
