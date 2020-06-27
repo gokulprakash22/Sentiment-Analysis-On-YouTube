@@ -138,6 +138,9 @@ def make_video_report():
     global neutral_str
     global nextPageToken
     global video_details
+    global positive_comments
+    global negative_comments
+    global neutral_comments
     summary=""
     positive_str=""
     negative_str=""
@@ -238,6 +241,12 @@ def draw_piechart():
 
 
 # Views
+video_details={}
+positive_comments = []
+negative_comments = []
+neutral_comments = []
+comments_count=0
+nextPageToken=None
 api_service_name = "youtube"
 api_version = "v3"
 DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
@@ -247,6 +256,26 @@ def index(request):
     return render(request,'index.html')
 
 def report(request):
+    global summary
+    global positive_str
+    global negative_str
+    global neutral_str
+    global nextPageToken
+    global comments_count
+    global video_details
+    global positive_comments
+    global negative_comments
+    global neutral_comments
+    video_details={}
+    positive_comments = []
+    negative_comments = []
+    neutral_comments = []
+    comments_count=0
+    nextPageToken=None
+    summary=""
+    positive_str=""
+    negative_str=""
+    neutral_str=""
     url = request.POST["destination"]
     videoId=get_video_id(url)
     if(videoId==None):
