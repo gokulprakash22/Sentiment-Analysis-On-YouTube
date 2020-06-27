@@ -262,6 +262,26 @@ def index(request):
     return render(request,'index.html')
 
 def report(request):
+    global video_details
+    global positive_comments
+    global negative_comments
+    global neutral_comments
+    global comments_count
+    global nextPageToken
+    global summary
+    global positive_str
+    global negative_str
+    global neutral_str
+    video_details={}
+    positive_comments=[]
+    negative_comments=[]
+    neutral_comments=[]
+    comments_count=0
+    nextPageToken=None
+    summary=''
+    positive_str=''
+    negative_str=''
+    neutral_str=''
     url = request.POST["destination"]
     videoId=get_video_id(url)
     if(videoId==None):
