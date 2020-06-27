@@ -24,6 +24,10 @@ summary=""
 positive_str=""
 negative_str=""
 neutral_str=""
+api_service_name = "youtube"
+api_version = "v3"
+DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
 
 
 def get_video_id(url):
@@ -254,17 +258,6 @@ def draw_piechart():
 
 
 # Views
-video_details={}
-positive_comments = []
-negative_comments = []
-neutral_comments = []
-comments_count=0
-nextPageToken=None
-api_service_name = "youtube"
-api_version = "v3"
-DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
-youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
-
 def index(request):
     return render(request,'index.html')
 
