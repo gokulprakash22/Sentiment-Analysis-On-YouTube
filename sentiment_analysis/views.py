@@ -79,6 +79,7 @@ def get_video_comments():
     global negative_comments
     global neutral_comments
     global nextPageToken
+    global comments_count
     global video_details
     positive_comments = []
     negative_comments = []
@@ -92,7 +93,6 @@ def get_video_comments():
     nextPageToken = response.get("nextPageToken")
 
     sentiment_analysis(response)
-    global comments_count
     comments_count=20
     while nextPageToken:
         request = youtube.commentThreads().list(
@@ -238,16 +238,6 @@ def draw_piechart():
 
 
 # Views
-video_details={}
-positive_comments = []
-negative_comments = []
-neutral_comments = []
-summary=""
-positive_str=""
-negative_str=""
-neutral_str=""
-comments_count=0
-nextPageToken=None
 api_service_name = "youtube"
 api_version = "v3"
 DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
