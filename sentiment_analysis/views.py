@@ -158,7 +158,7 @@ def make_video_report():
     video_details['NEGATIVE_PERCENT'] = float(format(100 * float(video_details['NEGATIVE_COUNT']) / float(video_details['POSITIVE_COUNT'] + video_details['NEGATIVE_COUNT'] + video_details['NEUTRAL_COUNT']),'.2f'))
     video_details['NEUTRAL_PERCENT'] = float(format(100 * float(video_details['NEUTRAL_COUNT']) / float(video_details['POSITIVE_COUNT'] + video_details['NEGATIVE_COUNT'] + video_details['NEUTRAL_COUNT']),'.2f'))
     summary+= "\nPOSITIVE COMMENTS COUNT: "+str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['POSITIVE_PERCENT'])+"%)"
-    summary+= "\nNEGATIVE COMMENTS COUNT: "+str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_COUNT'])+"%)"
+    summary+= "\nNEGATIVE COMMENTS COUNT: "+str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_PERCENT'])+"%)"
     summary+= "\nNEUTRAL COMMENTS COUNT: "+str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"
     if (video_details['POLARITY'] > 0):
         summary+= "\nOVERALL : Positive Comments With Overall Polarity "+str(video_details['POLARITY'])
@@ -193,11 +193,11 @@ def write_to_csv():
         comments_writer.writerow([10,'Negative Comments Count', str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_PERCENT'])+"%)"])
         comments_writer.writerow([11,'Neutral Comments Count', str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"])
         if (video_details['POLARITY'] > 0):
-            comments_writer.writerow([12,'OVERALL', 'Positive Comments With Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'Overall', 'Positive Comments With Overall Polarity '+str(video_details['POLARITY'])])
         elif (video_details['POLARITY'] < 0):
-            comments_writer.writerow([12,'OVERALL', 'Negative Comments With Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'Overall', 'Negative Comments With Overall Polarity '+str(video_details['POLARITY'])])
         elif (video_details['POLARITY'] == 0):
-            comments_writer.writerow([12,'OVERALL', 'Neutral Comments With Overall Polarity '+str(video_details['POLARITY'])])
+            comments_writer.writerow([12,'Overall', 'Neutral Comments With Overall Polarity '+str(video_details['POLARITY'])])
         comments_writer.writerow([])
         comments_writer.writerow(['COMMENTS'])
         comments_writer.writerow(['S.No', 'Category', 'Author', 'Comment', 'Likes Count', 'Published At', 'Polarity'])
@@ -231,7 +231,7 @@ def draw_piechart():
     colors = ['green', 'red', 'yellow']
     patches, texts = plt.pie(sizes, colors=colors, startangle=90, labels=name)
     plt.legend(patches, labels, loc="best")
-    plt.title(video_details['TITLE']+" Video Comments Analysis Pie Chart")
+    plt.title("YouTube Video Comments Analysis Pie Chart")
     plt.axis('equal')
     plt.savefig('piechart.png')
     plt.close()
