@@ -31,9 +31,19 @@
 					<span class="contact2-form-title">
 						SENTIMENT ANALYSIS ON YOUTUBE
 					</span>
-					<span style="color:red;text-align:center">
-						{{error_str}}
-					</span>
+					<h6 style="text-align:center">
+						Number of comments extracted and analysed : {{total_comments_extracted}}
+					</h6>
+					{% if not nextPageToken %}
+					<div class="container-contact2-form-btn">
+						<div class="wrap-contact2-form-btn">
+							<div class="contact2-form-bgbtn"></div>
+							<a href="more_comments"><button class="contact2-form-btn">
+								Extract More
+							</button></a>
+						</div>
+					</div>
+					{% endif %}
 
 					<h4>SUMMARY</h4><br>
 					<div class="wrap-input2">

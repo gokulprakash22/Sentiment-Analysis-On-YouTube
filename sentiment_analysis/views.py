@@ -30,10 +30,6 @@ def get_video_id(url):
 def get_video_details(videoId):
     global video_details
     video_details={}
-    api_service_name = "youtube"
-    api_version = "v3"
-    DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
-    youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
     request = youtube.videos().list(
         part="snippet,contentDetails,statistics",
         id=videoId
@@ -47,6 +43,8 @@ def get_video_details(videoId):
     video_details["DISLIKES_COUNT"] = response["items"][0]["statistics"]["dislikeCount"]
     video_details["COMMENTS_COUNT"] = response["items"][0]["statistics"]["commentCount"]
     video_details["POLARITY"] = 0
+    video_details["TOTAL_COMMENTS_EXTRACTED"]=0
+    video_details["VIDEO_ID"] = videoId
 
 def sentiment_analysis(mat):
     translator = Translator()
@@ -75,31 +73,29 @@ def sentiment_analysis(mat):
     overall_polarity = float(format(overall_polarity, '.2f'))
     video_details['POLARITY']=overall_polarity
 
-def get_video_comments(videoId):
+def get_video_comments():
     global positive_comments
     global negative_comments
     global neutral_comments
+    global nextPageToken
     positive_comments = []
     negative_comments = []
     neutral_comments = []
-    api_service_name = "youtube"
-    api_version = "v3"
-    DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
-    youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
     request = youtube.commentThreads().list(
         part="snippet,replies",
-        videoId=videoId,
+        videoId=video_details["VIDEO_ID"],
         textFormat="plainText"
     )
     response = request.execute()
     nextPageToken = response.get("nextPageToken")
+
     sentiment_analysis(response)
     global comments_count
     comments_count=20
     while nextPageToken:
         request = youtube.commentThreads().list(
             part="snippet,replies",
-            videoId=videoId,
+            videoId=video_details["VIDEO_ID"],
             textFormat="plainText",
             pageToken=nextPageToken
         )
@@ -108,7 +104,28 @@ def get_video_comments(videoId):
         sentiment_analysis(response)
         comments_count+=20
         print(comments_count)
-        if(comments_count>=200):
+        if(comments_count%100==0):
+            break
+
+def get_more_comments():
+    global positive_comments
+    global negative_comments
+    global neutral_comments
+    global nextPageToken
+    global comments_count
+    while nextPageToken:
+        request = youtube.commentThreads().list(
+            part="snippet,replies",
+            videoId=video_details["VIDEO_ID"],
+            textFormat="plainText",
+            pageToken=nextPageToken
+        )
+        response = request.execute()
+        nextPageToken = response.get("nextPageToken")
+        sentiment_analysis(response)
+        comments_count+=20
+        print(comments_count)
+        if(comments_count%100==0):
             break
 
 def make_video_report():
@@ -122,6 +139,7 @@ def make_video_report():
     neutral_str=""
     summary+="VIDEO TITLE : "+video_details['TITLE']
     summary+="\nVIDEO PUBLISHED AT : "+video_details['PUBLISHED_AT']
+    summary+="\nVIDEO ID : "+video_details['VIDEO_ID']
     summary+="\nCHANNEL NAME : "+video_details['CHANNEL_NAME']
     summary+="\nVIEWS COUNT : "+video_details['VIEWS_COUNT']
     summary+="\nLIKES COUNT : "+video_details['LIKES_COUNT']
@@ -130,6 +148,7 @@ def make_video_report():
     positive_comments_count = len(positive_comments)
     negative_comments_count = len(negative_comments)
     neutral_comments_count = len(neutral_comments)
+    video_details["TOTAL_COMMENTS_EXTRACTED"] = positive_comments_count+negative_comments_count+neutral_comments_count
     positive_percent = float(format(100 * float(positive_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
     negative_percent = float(format(100 * float(negative_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
     neutral_percent = float(format(100 * float(neutral_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
@@ -155,9 +174,9 @@ def make_video_report():
     for index,comment in enumerate(neutral_comments):
         neutral_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
 
-def write_to_csv():
+def write_to_csv(mode):
     import csv
-    with open('comments.csv', 'w') as comments_file:
+    with open('comments.csv', mode) as comments_file:
         comments_writer = csv.writer(comments_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         comments_writer.writerow(['S.No', 'Category', 'Author', 'Comment', 'Likes Count', 'Published At', 'Polarity'])
         for index,comment in enumerate(positive_comments):
@@ -211,6 +230,11 @@ positive_str=""
 negative_str=""
 neutral_str=""
 comments_count=0
+nextPageToken=None
+api_service_name = "youtube"
+api_version = "v3"
+DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
 
 def index(request):
     return render(request,'index.html')
@@ -221,10 +245,18 @@ def report(request):
     if(videoId==None):
         return render(request,'index.html')
     get_video_details(videoId)
-    get_video_comments(videoId)
+    get_video_comments()
     make_video_report()
-    write_to_csv()
-    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str})
+    mode='w'
+    write_to_csv(mode)
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
+
+def more_comments(request):
+    get_more_comments()
+    make_video_report()
+    mode='a'
+    write_to_csv(mode)
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
 
 def csv(request):
     csv_file = open('comments.csv', 'rb')
@@ -237,4 +269,4 @@ def pie_chart(request):
         draw_piechart()
     except:
         error_str="Some Problem occured. Please Try again later"
-    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str, 'error_str':error_str})
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,,'nextPageToken':nextPageToken,'error_str':error_str,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
