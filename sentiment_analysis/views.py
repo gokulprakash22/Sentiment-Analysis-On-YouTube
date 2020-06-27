@@ -269,4 +269,4 @@ def pie_chart(request):
         draw_piechart()
     except:
         error_str="Some Problem occured. Please Try again later"
-    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,,'nextPageToken':nextPageToken,'error_str':error_str,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
+    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'error_str':error_str,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
