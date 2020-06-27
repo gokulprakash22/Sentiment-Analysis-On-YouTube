@@ -133,6 +133,7 @@ def make_video_report():
     global positive_str
     global negative_str
     global neutral_str
+    global nextPageToken
     summary=""
     positive_str=""
     negative_str=""
@@ -145,22 +146,16 @@ def make_video_report():
     summary+="\nLIKES COUNT : "+video_details['LIKES_COUNT']
     summary+="\nDISLIKES COUNT : "+video_details['DISLIKES_COUNT']
     summary+="\nCOMMENTS COUNT : "+video_details['COMMENTS_COUNT']
-    positive_comments_count = len(positive_comments)
-    negative_comments_count = len(negative_comments)
-    neutral_comments_count = len(neutral_comments)
-    video_details["TOTAL_COMMENTS_EXTRACTED"] = positive_comments_count+negative_comments_count+neutral_comments_count
-    positive_percent = float(format(100 * float(positive_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
-    negative_percent = float(format(100 * float(negative_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
-    neutral_percent = float(format(100 * float(neutral_comments_count) / float(positive_comments_count + negative_comments_count + neutral_comments_count),'.2f'))
-    video_details['POSITIVE_COUNT'] = positive_comments_count
-    video_details['NEGATIVE_COUNT'] = negative_comments_count
-    video_details['NEUTRAL_COUNT'] = neutral_comments_count
-    video_details['POSITIVE_PERCENT'] = positive_percent
-    video_details['NEGATIVE_PERCENT'] = negative_percent
-    video_details['NEUTRAL_PERCENT'] = neutral_percent
-    summary+= "\nPOSITIVE COMMENTS COUNT: "+str(positive_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(positive_percent)+"%)"
-    summary+= "\nNEGATIVE COMMENTS COUNT: "+str(negative_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(negative_percent)+"%)"
-    summary+= "\nNEUTRAL COMMENTS COUNT: "+str(neutral_comments_count)+("+" if comments_count>=1000 else "")+" ("+str(neutral_percent)+"%)"
+    video_details['POSITIVE_COUNT'] = len(positive_comments)
+    video_details['NEGATIVE_COUNT'] = len(negative_comments)
+    video_details['NEUTRAL_COUNT'] = len(neutral_comments)
+    video_details["TOTAL_COMMENTS_EXTRACTED"] = video_details['POSITIVE_COUNT']+video_details['NEGATIVE_COUNT']+video_details['NEUTRAL_COUNT']
+    video_details['POSITIVE_PERCENT'] = float(format(100 * float(video_details['POSITIVE_COUNT']) / float(video_details['POSITIVE_COUNT'] + video_details['NEGATIVE_COUNT'] + video_details['NEUTRAL_COUNT']),'.2f'))
+    video_details['NEGATIVE_PERCENT'] = float(format(100 * float(video_details['NEGATIVE_COUNT']) / float(video_details['POSITIVE_COUNT'] + video_details['NEGATIVE_COUNT'] + video_details['NEUTRAL_COUNT']),'.2f'))
+    video_details['NEUTRAL_PERCENT'] = float(format(100 * float(video_details['NEUTRAL_COUNT']) / float(video_details['POSITIVE_COUNT'] + video_details['NEGATIVE_COUNT'] + video_details['NEUTRAL_COUNT']),'.2f'))
+    summary+= "\nPOSITIVE COMMENTS COUNT: "+str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['POSITIVE_PERCENT'])+"%)"
+    summary+= "\nNEGATIVE COMMENTS COUNT: "+str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_COUNT'])+"%)"
+    summary+= "\nNEUTRAL COMMENTS COUNT: "+str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"
     if (video_details['POLARITY'] > 0):
         summary+= "\nOVERALL : Positive comments with Overall Polarity "+str(video_details['POLARITY'])
     elif (video_details['POLARITY'] < 0):
@@ -174,10 +169,30 @@ def make_video_report():
     for index,comment in enumerate(neutral_comments):
         neutral_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
 
-def write_to_csv(mode):
+def write_to_csv():
     import csv
-    with open('comments.csv', mode) as comments_file:
+    global nextPageToken
+    with open('comments.csv', 'w') as comments_file:
         comments_writer = csv.writer(comments_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        comments_writer.writerow(['SUMMARY'])
+        comments_writer.writerow(['VIDEO TITLE', video_details['TITLE']])
+        comments_writer.writerow(['VIDEO PUBLISHED AT', video_details['PUBLISHED_AT']])
+        comments_writer.writerow(['VIDEO ID', video_details['VIDEO_ID']])
+        comments_writer.writerow(['CHANNEL NAME', video_details['CHANNEL_NAME']])
+        comments_writer.writerow(['VIEWS COUNT', video_details['VIEWS_COUNT']])
+        comments_writer.writerow(['LIKES COUNT', video_details['LIKES_COUNT']])
+        comments_writer.writerow(['DISLIKES COUNT', video_details['DISLIKES_COUNT']])
+        comments_writer.writerow(['COMMENTS COUNT', video_details['COMMENTS_COUNT']])
+        comments_writer.writerow(['POSITIVE COMMENTS COUNT', str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['POSITIVE_PERCENT'])+"%)"])
+        comments_writer.writerow(['NEGATIVE COMMENTS COUNT', str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEGATIVE_PERCENT'])+"%)"])
+        comments_writer.writerow(['NEUTRAL COMMENTS COUNT', str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")+" ("+str(video_details['NEUTRAL_PERCENT'])+"%)"])
+        if (video_details['POLARITY'] > 0):
+            comments_writer.writerow(['OVERALL', 'Positive comments with Overall Polarity '+str(video_details['POLARITY'])])
+        elif (video_details['POLARITY'] < 0):
+            comments_writer.writerow(['OVERALL', 'Negative comments with Overall Polarity '+str(video_details['POLARITY'])])
+        elif (video_details['POLARITY'] == 0):
+            comments_writer.writerow(['OVERALL', 'Neutral comments with Overall Polarity '+str(video_details['POLARITY'])])
+        comments_writer.writerow(['COMMENTS'])
         comments_writer.writerow(['S.No', 'Category', 'Author', 'Comment', 'Likes Count', 'Published At', 'Polarity'])
         for index,comment in enumerate(positive_comments):
             try:
@@ -199,24 +214,18 @@ def draw_piechart():
     import matplotlib
     matplotlib.use('Agg')
     from matplotlib import pyplot as plt
-    positive_comments_count = video_details['POSITIVE_COUNT']
-    negative_comments_count = video_details['NEGATIVE_COUNT']
-    neutral_comments_count = video_details['NEUTRAL_COUNT']
-    positive_percent = video_details['POSITIVE_PERCENT']
-    negative_percent = video_details['NEGATIVE_PERCENT']
-    neutral_percent = video_details['NEUTRAL_PERCENT']
-    labels=['Positive : ' + str(positive_percent) + '%\nCount : ' + str(positive_comments_count)+("+" if comments_count>=1000 else ""),
-            'Negative : ' + str(negative_percent) + '%\nCount : ' + str(negative_comments_count)+("+" if comments_count>=1000 else ""),
-            'Neutral : ' + str(neutral_percent) + '%\nCount : ' + str(neutral_comments_count)+("+" if comments_count>=1000 else "")]
-    sizes = [positive_percent, negative_percent, neutral_percent]
-    name = [str(positive_percent) + '%', str(negative_percent) + '%', str(neutral_percent) + '%']
+    global nextPageToken
+    labels=['Positive : ' + str(video_details['POSITIVE_PERCENT']) + '%\nCount : ' + str(video_details['POSITIVE_COUNT'])+("+" if nextPageToken else ""),
+            'Negative : ' + str(video_details['NEGATIVE_PERCENT']) + '%\nCount : ' + str(video_details['NEGATIVE_COUNT'])+("+" if nextPageToken else ""),
+            'Neutral : ' + str(video_details['NEUTRAL_PERCENT']) + '%\nCount : ' + str(video_details['NEUTRAL_COUNT'])+("+" if nextPageToken else "")]
+    sizes = [video_details['POSITIVE_PERCENT'], video_details['NEGATIVE_PERCENT'], video_details['NEUTRAL_PERCENT']]
+    name = [str(video_details['POSITIVE_PERCENT']) + '%', str(video_details['NEGATIVE_PERCENT']) + '%', str(video_details['NEUTRAL_PERCENT']) + '%']
     colors = ['green', 'red', 'yellow']
     patches, texts = plt.pie(sizes, colors=colors, startangle=90, labels=name)
     plt.legend(patches, labels, loc="best")
     plt.title("Youtube Comments Analysis Pie Chart")
     plt.axis('equal')
-    plt.tight_layout()
-    plt.show()
+    plt.savefig('piechart.png')
     plt.close()
 
 
@@ -247,15 +256,15 @@ def report(request):
     get_video_details(videoId)
     get_video_comments()
     make_video_report()
-    mode='w'
-    write_to_csv(mode)
+    write_to_csv()
+    draw_piechart()
     return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
 
 def more_comments(request):
     get_more_comments()
     make_video_report()
-    mode='a'
-    write_to_csv(mode)
+    write_to_csv()
+    draw_piechart()
     return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
 
 def csv(request):
@@ -264,9 +273,6 @@ def csv(request):
     return response
 
 def pie_chart(request):
-    error_str=""
-    try:
-        draw_piechart()
-    except:
-        error_str="Some Problem occured. Please Try again later"
-    return render(request, 'results.html', {'summary': summary, 'positive_str':positive_str,'negative_str':negative_str,'neutral_str':neutral_str,'nextPageToken':nextPageToken,'error_str':error_str,'total_comments_extracted':video_details["TOTAL_COMMENTS_EXTRACTED"]})
+    pie_chart = open('piechart.png', 'rb')
+    response = FileResponse(pie_chart)
+    return response
