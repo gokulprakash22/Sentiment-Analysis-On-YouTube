@@ -15,12 +15,16 @@ from textblob import TextBlob
 
 #global variables
 video_details={}
+
+
+#YouTube API
 api_service_name = "youtube"
 api_version = "v3"
 DEVELOPER_KEY = os.environ.get('DEVELOPER_KEY')
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey = DEVELOPER_KEY)
 
 
+#functions
 def get_video_id(url):
     query = urlparse(url)
     if query.hostname == 'youtu.be':
@@ -141,10 +145,10 @@ def make_video_report():
     video_details["SUMMARY"]+="\nVIDEO PUBLISHED AT : "+video_details["PUBLISHED_AT"]
     video_details["SUMMARY"]+="\nVIDEO ID : "+video_details["VIDEO_ID"]
     video_details["SUMMARY"]+="\nCHANNEL NAME : "+video_details["CHANNEL_NAME"]
-    video_details["SUMMARY"]+="\nVIEWS COUNT : "+video_details["VIEWS_COUNT"]
-    video_details["SUMMARY"]+="\nLIKES COUNT : "+video_details["LIKES_COUNT"]
-    video_details["SUMMARY"]+="\nDISLIKES COUNT : "+video_details["DISLIKES_COUNT"]
-    video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+video_details["COMMENTS_COUNT"]
+    video_details["SUMMARY"]+="\nVIEWS COUNT : "+str(video_details["VIEWS_COUNT"])
+    video_details["SUMMARY"]+="\nLIKES COUNT : "+str(video_details["LIKES_COUNT"])
+    video_details["SUMMARY"]+="\nDISLIKES COUNT : "+str(video_details["DISLIKES_COUNT"])
+    video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+str(video_details["COMMENTS_COUNT"])
     video_details["POSITIVE_COUNT"] = len(video_details["POSITIVE_COMMENTS"])
     video_details["NEGATIVE_COUNT"] = len(video_details["NEGATIVE_COMMENTS"])
     video_details["NEUTRAL_COUNT"] = len(video_details["NEUTRAL_COMMENTS"])
@@ -156,17 +160,17 @@ def make_video_report():
     video_details["SUMMARY"]+= "\nNEGATIVE COMMENTS COUNT: "+str(video_details["NEGATIVE_COUNT"])+("+" if video_details["NEXT_PAGE_TOKEN"] else "")+" ("+str(video_details["NEGATIVE_PERCENT"])+"%)"
     video_details["SUMMARY"]+= "\nNEUTRAL COMMENTS COUNT: "+str(video_details["NEUTRAL_COUNT"])+("+" if video_details["NEXT_PAGE_TOKEN"] else "")+" ("+str(video_details["NEUTRAL_PERCENT"])+"%)"
     if (video_details["POLARITY"] > 0):
-        summary+= "\nOVERALL : Positive Comments With Overall Polarity "+str(video_details["POLARITY"])
+        video_details["SUMMARY"]+= "\nOVERALL : Positive Comments With Overall Polarity "+str(video_details["POLARITY"])
     elif (video_details["POLARITY"] < 0):
-        summary+= "\nOVERALL : Negative Comments With Overall Polarity " + str(video_details["POLARITY"])
+        video_details["SUMMARY"]+= "\nOVERALL : Negative Comments With Overall Polarity " + str(video_details["POLARITY"])
     elif (video_details["POLARITY"] == 0):
-        summary+= "\nOVERALL : Neutral Comments With Overall Polarity " + str(video_details["POLARITY"])
+        video_details["SUMMARY"]+= "\nOVERALL : Neutral Comments With Overall Polarity " + str(video_details["POLARITY"])
     for index,comment in enumerate(video_details["POSITIVE_COMMENTS"]):
-        positive_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["POSITIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
     for index,comment in enumerate(video_details["NEGATIVE_COMMENTS"]):
-        negative_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
     for index,comment in enumerate(video_details["NEUTRAL_COMMENTS"]):
-        neutral_str+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
 
 def write_to_csv():
     import csv
