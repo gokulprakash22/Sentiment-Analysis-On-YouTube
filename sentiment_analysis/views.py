@@ -93,7 +93,7 @@ def sentiment_analysis(mat):
         else:
             video_details["NEUTRAL_COMMENTS"].append(comments)
     overall_polarity = float(format(overall_polarity, '.2f'))
-    video_details['POLARITY']=overall_polarity
+    video_details["POLARITY"]=overall_polarity
 
 def get_video_comments():
     global video_details
@@ -137,6 +137,7 @@ def get_more_comments():
 
 def make_video_report():
     global video_details
+    print(video_details)
     video_details["SUMMARY"]=''
     video_details["POSITIVE_COMMENTS"]=''
     video_details["NEGATIVE_COMMENTS"]=''
