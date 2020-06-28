@@ -65,7 +65,13 @@ def get_video_details(videoId):
     video_details["SUMMARY"]=''
     video_details["POSITIVE_STR"]=''
     video_details["NEGATIVE_STR"]=''
-    video_details["NEUTRAL_STR"]=''
+    video_details["NEUTRAL_STR"]='']
+    video_details["POSITIVE_COUNT"]=0
+    video_details["NEGATIVE_COUNT"]=0
+    video_details["NEUTRAL_COUNT"]=0
+    video_details["POSITIVE_PERCENT"]=0
+    video_details["NEGATIVE_PERCENT"]=0
+    video_details["NEUTRAL PERCENT"]=0
 
 def sentiment_analysis(mat):
     global video_details
@@ -153,6 +159,7 @@ def make_video_report():
     video_details["POSITIVE_COUNT"] = len(video_details["POSITIVE_COMMENTS"])
     video_details["NEGATIVE_COUNT"] = len(video_details["NEGATIVE_COMMENTS"])
     video_details["NEUTRAL_COUNT"] = len(video_details["NEUTRAL_COMMENTS"])
+    print(video_details["POSITIVE_COUNT"],video_details["NEGATIVE_COUNT"],video_details["NEUTRAL_COUNT"])
     video_details["TOTAL_COMMENTS_EXTRACTED"] = video_details["POSITIVE_COUNT"]+video_details["NEGATIVE_COUNT"]+video_details["NEUTRAL_COUNT"]
     video_details["POSITIVE_PERCENT"] = float(format(100 * float(video_details["POSITIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEGATIVE_PERCENT"] = float(format(100 * float(video_details["NEGATIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
