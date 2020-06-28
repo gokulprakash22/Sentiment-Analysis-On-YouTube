@@ -94,10 +94,14 @@ def sentiment_analysis(mat):
         overall_polarity += polarity
         if polarity > 0:
             video_details["POSITIVE_COMMENTS"].append(comments)
+            video_details["POSITIVE_COUNT"]+=1
         elif polarity < 0:
             video_details["NEGATIVE_COMMENTS"].append(comments)
+            video_details["NEGATIVE_COUNT"]+=1
         else:
             video_details["NEUTRAL_COMMENTS"].append(comments)
+            video_details["NEUTRAL_COUNT"]+=1
+        video_details["TOTAL_COMMENTS_EXTRACTED"]+=1
     overall_polarity = float(format(overall_polarity, '.2f'))
     video_details["POLARITY"]=overall_polarity
 
@@ -156,11 +160,7 @@ def make_video_report():
     video_details["SUMMARY"]+="\nLIKES COUNT : "+str(video_details["LIKES_COUNT"])
     video_details["SUMMARY"]+="\nDISLIKES COUNT : "+str(video_details["DISLIKES_COUNT"])
     video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+str(video_details["COMMENTS_COUNT"])
-    video_details["POSITIVE_COUNT"] = len(video_details["POSITIVE_COMMENTS"])
-    video_details["NEGATIVE_COUNT"] = len(video_details["NEGATIVE_COMMENTS"])
-    video_details["NEUTRAL_COUNT"] = len(video_details["NEUTRAL_COMMENTS"])
     print(video_details["POSITIVE_COUNT"],video_details["NEGATIVE_COUNT"],video_details["NEUTRAL_COUNT"])
-    video_details["TOTAL_COMMENTS_EXTRACTED"] = video_details["POSITIVE_COUNT"]+video_details["NEGATIVE_COUNT"]+video_details["NEUTRAL_COUNT"]
     video_details["POSITIVE_PERCENT"] = float(format(100 * float(video_details["POSITIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEGATIVE_PERCENT"] = float(format(100 * float(video_details["NEGATIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEUTRAL_PERCENT"] = float(format(100 * float(video_details["NEUTRAL_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
