@@ -65,7 +65,7 @@ def get_video_details(videoId):
     video_details["SUMMARY"]=''
     video_details["POSITIVE_STR"]=''
     video_details["NEGATIVE_STR"]=''
-    video_details["NEUTRAL_STR"]='']
+    video_details["NEUTRAL_STR"]=''
     video_details["POSITIVE_COUNT"]=0
     video_details["NEGATIVE_COUNT"]=0
     video_details["NEUTRAL_COUNT"]=0
