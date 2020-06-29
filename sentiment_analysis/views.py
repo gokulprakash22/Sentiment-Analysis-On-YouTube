@@ -48,7 +48,7 @@ def get_video_details(videoId):
     video_details["VIEWS_COUNT"] = response["items"][0]["statistics"]["viewCount"]
     video_details["LIKES_COUNT"] = response["items"][0]["statistics"]["likeCount"]
     video_details["DISLIKES_COUNT"] = response["items"][0]["statistics"]["dislikeCount"]
-    video_details["COMMENTS_COUNT"] = response["items"][0]["statistics"]["commentCount"]
+    video_details["VIDEO_COMMENTS_COUNT"] = response["items"][0]["statistics"]["commentCount"]
     video_details["POLARITY"] = 0
     video_details["TOTAL_COMMENTS_EXTRACTED"]=0
     video_details["VIDEO_ID"] = videoId
@@ -140,7 +140,6 @@ def get_more_comments(video_details):
     return video_details
 
 def make_video_report(video_details):
-    print(video_details)
     video_details["SUMMARY"]=''
     video_details["POSITIVE_STR"]=''
     video_details["NEGATIVE_STR"]=''
@@ -152,12 +151,11 @@ def make_video_report(video_details):
     video_details["SUMMARY"]+="\nVIEWS COUNT : "+str(video_details["VIEWS_COUNT"])
     video_details["SUMMARY"]+="\nLIKES COUNT : "+str(video_details["LIKES_COUNT"])
     video_details["SUMMARY"]+="\nDISLIKES COUNT : "+str(video_details["DISLIKES_COUNT"])
-    video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+str(video_details["COMMENTS_COUNT"])
+    video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+str(video_details["VIDEO_COMMENTS_COUNT"])
     video_details["POSITIVE_COUNT"]=len(video_details["POSITIVE_COMMENTS"])
     video_details["NEGATIVE_COUNT"]=len(video_details["NEGATIVE_COMMENTS"])
     video_details["NEUTRAL_COUNT"]=len(video_details["NEUTRAL_COMMENTS"])
     video_details["TOTAL_COMMENTS_EXTRACTED"]=video_details["POSITIVE_COUNT"]+video_details["NEGATIVE_COUNT"]+video_details["NEUTRAL_COUNT"]
-    print(video_details["POSITIVE_COUNT"],video_details["NEGATIVE_COUNT"],video_details["NEUTRAL_COUNT"])
     video_details["POSITIVE_PERCENT"] = float(format(100 * float(video_details["POSITIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEGATIVE_PERCENT"] = float(format(100 * float(video_details["NEGATIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEUTRAL_PERCENT"] = float(format(100 * float(video_details["NEUTRAL_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
@@ -171,11 +169,11 @@ def make_video_report(video_details):
     elif (video_details["POLARITY"] == 0):
         video_details["SUMMARY"]+= "\nOVERALL : Neutral Comments With Overall Polarity " + str(video_details["POLARITY"])
     for index,comment in enumerate(video_details["POSITIVE_COMMENTS"]):
-        video_details["POSITIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["POSITIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
     for index,comment in enumerate(video_details["NEGATIVE_COMMENTS"]):
-        video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
     for index,comment in enumerate(video_details["NEUTRAL_COMMENTS"]):
-        video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+        video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
     return video_details
 
 def write_to_csv(video_details):
