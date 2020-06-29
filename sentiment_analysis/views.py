@@ -85,8 +85,9 @@ def sentiment_analysis(mat,video_details):
             inp = comment["snippet"]["textDisplay"]
         analyzer = TextBlob(inp)
         polarity = analyzer.sentiment.polarity
-        comments["polarity"] = polarity
         overall_polarity += polarity
+        polarity = float(format(polarity, '.2f'))
+        comments["polarity"] = polarity
         if polarity > 0:
             video_details["POSITIVE_COMMENTS"].append(comments)
         elif polarity < 0:
