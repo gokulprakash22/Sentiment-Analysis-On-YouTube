@@ -169,11 +169,11 @@ def make_video_report(video_details):
     elif (video_details["POLARITY"] == 0):
         video_details["SUMMARY"]+= "\nOVERALL : Neutral Comments With Overall Polarity " + str(video_details["POLARITY"])
     for index,comment in enumerate(video_details["POSITIVE_COMMENTS"]):
-        video_details["POSITIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
+        video_details["POSITIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+str(comment["polarity"])+"\n\n"
     for index,comment in enumerate(video_details["NEGATIVE_COMMENTS"]):
-        video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
+        video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+str(comment["polarity"])+"\n\n"
     for index,comment in enumerate(video_details["NEUTRAL_COMMENTS"]):
-        video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+comment["polarity"]+"\n\n"
+        video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+", Polarity: "+str(comment["polarity"])+"\n\n"
     return video_details
 
 def write_to_csv(video_details):
