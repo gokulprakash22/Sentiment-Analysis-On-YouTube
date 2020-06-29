@@ -13,10 +13,6 @@ from googletrans import Translator
 from textblob import TextBlob
 
 
-#global variables
-video_details={}
-
-
 #YouTube API
 api_service_name = "youtube"
 api_version = "v3"
@@ -40,7 +36,6 @@ def get_video_id(url):
     return None
 
 def get_video_details(videoId):
-    global video_details
     video_details={}
     request = youtube.videos().list(
         part="snippet,contentDetails,statistics",
@@ -71,10 +66,10 @@ def get_video_details(videoId):
     video_details["NEUTRAL_COUNT"]=0
     video_details["POSITIVE_PERCENT"]=0
     video_details["NEGATIVE_PERCENT"]=0
-    video_details["NEUTRAL PERCENT"]=0
+    video_details["NEUTRAL_PERCENT"]=0
+    return video_details
 
-def sentiment_analysis(mat):
-    global video_details
+def sentiment_analysis(mat,video_details):
     translator = Translator()
     overall_polarity = video_details["POLARITY"]
     for item in mat["items"]:       
@@ -94,26 +89,22 @@ def sentiment_analysis(mat):
         overall_polarity += polarity
         if polarity > 0:
             video_details["POSITIVE_COMMENTS"].append(comments)
-            video_details["POSITIVE_COUNT"]+=1
         elif polarity < 0:
             video_details["NEGATIVE_COMMENTS"].append(comments)
-            video_details["NEGATIVE_COUNT"]+=1
         else:
             video_details["NEUTRAL_COMMENTS"].append(comments)
-            video_details["NEUTRAL_COUNT"]+=1
-        video_details["TOTAL_COMMENTS_EXTRACTED"]+=1
     overall_polarity = float(format(overall_polarity, '.2f'))
     video_details["POLARITY"]=overall_polarity
+    return video_details
 
-def get_video_comments():
-    global video_details
+def get_video_comments(video_details):
     request = youtube.commentThreads().list(
         part="snippet,replies",
         videoId=video_details["VIDEO_ID"]
     )
     response = request.execute()
     video_details["NEXT_PAGE_TOKEN"] = response.get("nextPageToken")
-    sentiment_analysis(response)
+    video_details=sentiment_analysis(response,video_details)
     video_details["COMMENTS_COUNT"]=20
     while video_details["NEXT_PAGE_TOKEN"]:
         request = youtube.commentThreads().list(
@@ -123,14 +114,15 @@ def get_video_comments():
         )
         response = request.execute()
         video_details["NEXT_PAGE_TOKEN"] = response.get("nextPageToken")
-        sentiment_analysis(response)
+        video_details=sentiment_analysis(response,video_details)
         video_details["COMMENTS_COUNT"]+=20
         print(video_details["COMMENTS_COUNT"])
         if(video_details["COMMENTS_COUNT"]%100==0):
+            return video_details
             break
+    return video_details
 
-def get_more_comments():
-    global video_details
+def get_more_comments(video_details):
     while video_details["NEXT_PAGE_TOKEN"]:
         request = youtube.commentThreads().list(
             part="snippet,replies",
@@ -139,19 +131,20 @@ def get_more_comments():
         )
         response = request.execute()
         video_details["NEXT_PAGE_TOKEN"] = response.get("nextPageToken")
-        sentiment_analysis(response)
+        video_details=sentiment_analysis(response,video_details)
         video_details["COMMENTS_COUNT"]+=20
         print(video_details["COMMENTS_COUNT"])
         if(video_details["COMMENTS_COUNT"]%100==0):
+            return video_details
             break
+    return video_details
 
-def make_video_report():
-    global video_details
+def make_video_report(video_details):
     print(video_details)
     video_details["SUMMARY"]=''
-    video_details["POSITIVE_COMMENTS"]=''
-    video_details["NEGATIVE_COMMENTS"]=''
-    video_details["NEUTRAL_COMMENTS"]=''
+    video_details["POSITIVE_STR"]=''
+    video_details["NEGATIVE_STR"]=''
+    video_details["NEUTRAL_STR"]=''
     video_details["SUMMARY"]+="VIDEO TITLE : "+video_details["TITLE"]
     video_details["SUMMARY"]+="\nVIDEO PUBLISHED AT : "+video_details["PUBLISHED_AT"]
     video_details["SUMMARY"]+="\nVIDEO ID : "+video_details["VIDEO_ID"]
@@ -160,6 +153,10 @@ def make_video_report():
     video_details["SUMMARY"]+="\nLIKES COUNT : "+str(video_details["LIKES_COUNT"])
     video_details["SUMMARY"]+="\nDISLIKES COUNT : "+str(video_details["DISLIKES_COUNT"])
     video_details["SUMMARY"]+="\nCOMMENTS COUNT : "+str(video_details["COMMENTS_COUNT"])
+    video_details["POSITIVE_COUNT"]=len(video_details["POSITIVE_COMMENTS"])
+    video_details["NEGATIVE_COUNT"]=len(video_details["NEGATIVE_COMMENTS"])
+    video_details["NEUTRAL_COUNT"]=len(video_details["NEUTRAL_COMMENTS"])
+    video_details["TOTAL_COMMENTS_EXTRACTED"]=video_details["POSITIVE_COUNT"]+video_details["NEGATIVE_COUNT"]+video_details["NEUTRAL_COUNT"]
     print(video_details["POSITIVE_COUNT"],video_details["NEGATIVE_COUNT"],video_details["NEUTRAL_COUNT"])
     video_details["POSITIVE_PERCENT"] = float(format(100 * float(video_details["POSITIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
     video_details["NEGATIVE_PERCENT"] = float(format(100 * float(video_details["NEGATIVE_COUNT"]) / float(video_details["POSITIVE_COUNT"] + video_details["NEGATIVE_COUNT"] + video_details["NEUTRAL_COUNT"]),".2f"))
@@ -179,8 +176,9 @@ def make_video_report():
         video_details["NEGATIVE_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
     for index,comment in enumerate(video_details["NEUTRAL_COMMENTS"]):
         video_details["NEUTRAL_STR"]+=str(index+1)+") "+comment["author"]+": "+comment["comment"]+"\nLikes Count: "+str(comment["likecount"])+", Published At: "+comment["publishedAt"]+"\n\n"
+    return video_details
 
-def write_to_csv():
+def write_to_csv(video_details):
     import csv
     with open("comments.csv", "w") as comments_file:
         comments_writer = csv.writer(comments_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -222,7 +220,7 @@ def write_to_csv():
             except:
                 comments_writer.writerow([index+1,"Neutral Comment","Can't Decode In CSV","Can't Decode In CSV",comment["likecount"],comment["publishedAt"],comment["polarity"]])
 
-def draw_piechart():
+def draw_piechart(video_details):
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
@@ -249,18 +247,21 @@ def report(request):
     videoId=get_video_id(url)
     if(videoId==None):
         return render(request,"index.html")
-    get_video_details(videoId)
-    get_video_comments()
-    make_video_report()
-    write_to_csv()
-    draw_piechart()
+    video_details=get_video_details(videoId)
+    video_details=get_video_comments(video_details)
+    video_details=make_video_report(video_details)
+    write_to_csv(video_details)
+    draw_piechart(video_details)
+    request.session["VIDEO_DETAILS"]=video_details
     return render(request, "results.html", {"summary": video_details["SUMMARY"], "positive_str":video_details["POSITIVE_STR"],"negative_str":video_details["NEGATIVE_STR"],"neutral_str":video_details["NEUTRAL_STR"],"nextPageToken":video_details["NEXT_PAGE_TOKEN"],"total_comments_extracted":video_details["TOTAL_COMMENTS_EXTRACTED"]})
 
 def more_comments(request):
-    get_more_comments()
-    make_video_report()
-    write_to_csv()
-    draw_piechart()
+    video_details=request.session["VIDEO_DETAILS"]
+    video_details=get_more_comments(video_details)
+    video_details=make_video_report(video_details)
+    write_to_csv(video_details)
+    draw_piechart(video_details)
+    request.session["VIDEO_DETAILS"]=video_details
     return render(request, "results.html", {"summary": video_details["SUMMARY"], "positive_str":video_details["POSITIVE_STR"],"negative_str":video_details["NEGATIVE_STR"],"neutral_str":video_details["NEUTRAL_STR"],"nextPageToken":video_details["NEXT_PAGE_TOKEN"],"total_comments_extracted":video_details["TOTAL_COMMENTS_EXTRACTED"]})
 
 def csv(request):
