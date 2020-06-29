@@ -118,7 +118,7 @@ def get_video_comments(video_details):
         video_details=sentiment_analysis(response,video_details)
         video_details["COMMENTS_COUNT"]+=20
         print(video_details["COMMENTS_COUNT"])
-        if(video_details["COMMENTS_COUNT"]%100==0):
+        if(video_details["COMMENTS_COUNT"]%60==0):
             return video_details
             break
     return video_details
@@ -135,7 +135,7 @@ def get_more_comments(video_details):
         video_details=sentiment_analysis(response,video_details)
         video_details["COMMENTS_COUNT"]+=20
         print(video_details["COMMENTS_COUNT"])
-        if(video_details["COMMENTS_COUNT"]%100==0):
+        if(video_details["COMMENTS_COUNT"]%60==0):
             return video_details
             break
     return video_details
