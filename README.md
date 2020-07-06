@@ -7,4 +7,4 @@ This project is developed by a team of 3 members:<br>
 2. Ashwanth Kumar A<br>
 3. Abraham E<br>
 <br>
-Technologies used: Django, YouTube API, Python libraries like TextBlob, Googletrans, MatPlotLib, CSV.
+Technologies Used: Django, YouTube API, Python libraries like TextBlob, Googletrans, MatPlotLib, CSV.
