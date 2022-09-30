@@ -25,7 +25,7 @@ httplib2==0.18.1
 httpx==0.13.3
 hyperframe==5.2.0
 idna==2.9
-joblib==0.15.1
+joblib==1.2.0
 kiwisolver==1.2.0
 matplotlib==3.2.2
 nltk==3.5
